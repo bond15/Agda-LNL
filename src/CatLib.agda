@@ -2,6 +2,8 @@
 -- Taken from https://github.com/agda/agda-categories
 module CatLib where 
     open import Cubical.Core.Everything using (_≡_)
+    open import Cubical.Foundations.Prelude using (refl; ~_)
+
     open import Data.Nat using (ℕ;suc)
     open import Agda.Primitive using (Level; lsuc ; _⊔_)
 
@@ -37,6 +39,17 @@ module CatLib where
 
 
         infixr 40 _∘_
+
+
+    infixl 60 _^op
+    _^op : ∀ {o₁ h₁} → Category o₁ h₁ → Category o₁ h₁
+    (C ^op) .Category.Ob = Category.Ob C
+    (C ^op) .Category._⇒_ x y = Category._⇒_ C y x
+    (C ^op) .Category.id = Category.id C
+    (C ^op) .Category._∘_ f g = Category._∘_ C g f
+    (C ^op) .Category.idr = Category.idl C
+    (C ^op) .Category.idl = Category.idr C
+    (C ^op) .Category.assoc {f = f} {g} {h} i = Category.assoc C {f = h} {g} {f} (~ i)
 
     module ObjectProduct{o ℓ : Level} (𝒞 : Category o ℓ) where
         open Category 𝒞
@@ -267,6 +280,19 @@ module CatLib where
                 Fid : {A : Obᶜ} → F₁ (idᶜ {A}) ≡ idᵈ { F₀ A }
                 Fcomp : {A B C : Obᶜ}{f : A ⇒ᶜ B}{g : B ⇒ᶜ C} → F₁ (g ∘ᶜ f) ≡ (F₁ g ∘ᵈ F₁ f)
 
+    module ContraFunctor {o ℓ o' ℓ'}(𝒞 : Category o ℓ)(𝒟 : Category o' ℓ') where
+        open import Level using (levelOfTerm)
+
+        open Category 𝒞 renaming (Ob to Obᶜ; _⇒_ to _⇒ᶜ_; id to idᶜ; _∘_ to _∘ᶜ_)
+        open Category 𝒟 renaming (Ob to Obᵈ; _⇒_ to _⇒ᵈ_; id to idᵈ; _∘_ to _∘ᵈ_)
+
+        record ContraFunctorT : Set (o ⊔ o' ⊔ ℓ ⊔ ℓ') where 
+            field
+                F₀ : Obᶜ → Obᵈ
+                F₁ : {A B : Obᶜ} → (f : A ⇒ᶜ B) → F₀ B ⇒ᵈ F₀ A
+
+                Fid : {A : Obᶜ} → F₁ (idᶜ {A}) ≡ idᵈ { F₀ A }
+                Fcomp : {A B C : Obᶜ}{f : A ⇒ᶜ B}{g : B ⇒ᶜ C} → F₁ (g ∘ᶜ f) ≡ (F₁ f ∘ᵈ F₁ g)
 
     module Functors {o ℓ}{𝒞 : Category o ℓ} where 
 
@@ -387,6 +413,17 @@ module CatLib where
         field 
             η : (x : C-Ob) → (F₀ x) ⇒D (G₀ x)
             is-natural : (x y : C-Ob) (f : x ⇒C y) → (η y) ∘D (F₁ f) ≡ (G₁ f) ∘D (η x)
+
+        
+    module NP {o₁ h₁ o₂ h₂} {C : Category o₁ h₁}{D : Category o₂ h₂}(F G : Functor.FunctorT C D) where 
+        -- according to 1Lab https://1lab.dev/Cat.Base.html#1850
+        open Category C
+        
+        Nat-path : {a b : F ⇛ G} → 
+            ((x : Ob) → _⇛_.η a x ≡ _⇛_.η b x  )→ 
+            a ≡ b 
+        Nat-path = {!   !}
+
 
     _F∘_ : {o₁ h₁ o₂ h₂ o₃ h₃ : Level} → {B : Category o₁ h₁}{C : Category o₂ h₂}{D : Category o₃ h₃}
         → Functor.FunctorT C D → Functor.FunctorT  B C → Functor.FunctorT  B D 
